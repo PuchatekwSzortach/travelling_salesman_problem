@@ -23,7 +23,14 @@ def get_trip_distance(distances_grid, trip_itinerary):
     :param trip_itinerary: List of city indices
     :return: Trip distance
     """
-    0
+
+    distance = 0
+
+    for index in range(len(trip_itinerary))[1:]:
+
+        distance += distances_grid[trip_itinerary[index - 1], trip_itinerary[index]]
+
+    return distance
 
 
 class BruteForceTSPSolver:

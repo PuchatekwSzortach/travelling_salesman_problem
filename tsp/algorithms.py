@@ -1,25 +1,25 @@
 import numpy as np
 
 
-def get_random_distances_grid(cities_number, max_distance):
+def get_random_distances_matrix(cities_number, max_distance):
     """
     :param cities_number:
     :param max_distance:
     :return: matrix of distances from. E.g. element (i,j) defines distance from city i to city j
     """
 
-    asymmetric_distances_grid = np.random.random_integers(1, max_distance, size=(cities_number, cities_number))
-    distances_grid = (asymmetric_distances_grid + asymmetric_distances_grid.transpose()) / 2
+    asymmetric_distances_matrix = np.random.random_integers(1, max_distance, size=(cities_number, cities_number))
+    distances_matrix = (asymmetric_distances_matrix + asymmetric_distances_matrix.transpose()) / 2
 
     # Distance from a city to itself should be 0
-    distances_grid[np.diag_indices(cities_number)] = 0
+    distances_matrix[np.diag_indices(cities_number)] = 0
 
-    return distances_grid
+    return distances_matrix
 
 
-def get_trip_distance(distances_grid, path):
+def get_trip_distance(distances_matrix, path):
     """
-    :param distances_grid: Matrix of distances between cities
+    :param distances_matrix: Matrix of distances between cities
     :param path: List of city indices
     :return: Trip distance
     """
@@ -28,7 +28,7 @@ def get_trip_distance(distances_grid, path):
 
     for index in range(len(path))[1:]:
 
-        distance += distances_grid[path[index - 1], path[index]]
+        distance += distances_matrix[path[index - 1], path[index]]
 
     return distance
 
@@ -46,7 +46,7 @@ class BruteForceTSPSolver:
         """
         Solve travelling salesman problem solver problem given distances grid.
         Returns an array of cities indices defining optimal trip.
-        :param distances_grid:
+        :param distances_matrix:
         :return:
         """
 

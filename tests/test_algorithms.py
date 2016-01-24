@@ -101,4 +101,5 @@ def test_get_trip_distance_four_cities_bad_path(four_cities_grid):
 def test_brute_force_solution_four_cities(four_cities_grid):
 
     optimal_trip = tsp.algorithms.BruteForceTSPSolver(four_cities_grid).solve()
+    assert 120 == tsp.algorithms.get_trip_distance(four_cities_grid, optimal_trip)
 

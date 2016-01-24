@@ -2,7 +2,7 @@ import tsp.algorithms
 
 if __name__ == "__main__":
 
-    cities_number = 4
+    cities_number = 5
     max_distance = 100
 
     distances_matrix = tsp.algorithms.get_random_distances_matrix(cities_number, max_distance)

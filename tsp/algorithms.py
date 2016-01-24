@@ -1,5 +1,5 @@
 import numpy as np
-
+import itertools
 
 def get_random_distances_matrix(cities_number, max_distance):
     """
@@ -50,4 +50,20 @@ class BruteForceTSPSolver:
         :return:
         """
 
-        return [1, 2, 3]
+        # Generate all possible paths
+        cities_number = self.distances_matrix.shape[0]
+        paths = itertools.permutations(range(cities_number))
+
+        best_path = next(paths)
+        best_path_distance = get_trip_distance(self.distances_matrix, best_path)
+
+        for path in paths:
+
+            path_distance = get_trip_distance(self.distances_matrix, path)
+
+            if path_distance < best_path_distance:
+
+                best_path = path
+                best_path_distance = path_distance
+
+        return best_path

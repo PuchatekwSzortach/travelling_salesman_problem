@@ -97,20 +97,8 @@ def test_get_trip_distance_four_cities_bad_path(four_cities_grid):
     trip = [0, 1, 2, 3]
     assert 400 == tsp.algorithms.get_trip_distance(four_cities_grid, trip)
 
-# def test_brute_force_solution_four_cities():
-#
-#     distances_grid = np.zeros([4, 4])
-#
-#     # Build distances manually
-#     distances_grid[0, 1] = distances_grid[1, 0] = 100
-#     distances_grid[0, 2] = distances_grid[2, 0] = 10
-#     distances_grid[0, 3] = distances_grid[3, 0] = 200
-#
-#     distances_grid[1, 2] = distances_grid[2, 1] = 200
-#     distances_grid[1, 3] = distances_grid[3, 1] = 10
-#
-#     distances_grid[2, 3] = distances_grid[3, 2] = 100
-#
-#     optimal_trip = tsp.algorithms.BruteForceTSPSolver().solve(distances_grid)
-#
-#
+
+def test_brute_force_solution_four_cities(four_cities_grid):
+
+    optimal_trip = tsp.algorithms.BruteForceTSPSolver(four_cities_grid).solve()
+

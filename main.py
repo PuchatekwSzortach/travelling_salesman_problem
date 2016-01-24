@@ -9,3 +9,8 @@ if __name__ == "__main__":
 
     brute_solver = tsp.algorithms.BruteForceTSPSolver()
 
+    path = brute_solver.solve(distances_grid)
+
+    print("Path is " + str(path))
+    print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_grid, path)))
+

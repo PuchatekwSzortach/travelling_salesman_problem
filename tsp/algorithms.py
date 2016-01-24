@@ -17,18 +17,18 @@ def get_random_distances_grid(cities_number, max_distance):
     return distances_grid
 
 
-def get_trip_distance(distances_grid, trip_itinerary):
+def get_trip_distance(distances_grid, path):
     """
     :param distances_grid: Matrix of distances between cities
-    :param trip_itinerary: List of city indices
+    :param path: List of city indices
     :return: Trip distance
     """
 
     distance = 0
 
-    for index in range(len(trip_itinerary))[1:]:
+    for index in range(len(path))[1:]:
 
-        distance += distances_grid[trip_itinerary[index - 1], trip_itinerary[index]]
+        distance += distances_grid[path[index - 1], path[index]]
 
     return distance
 
@@ -38,10 +38,11 @@ class BruteForceTSPSolver:
     Travelling salesman problem solver that uses brute force to compute optimal solution.
     """
 
-    def __init__(self):
-        print("TSP BRUTE")
+    def __init__(self, distances_matrix):
 
-    def solve(self, distances_grid):
+        self.distances_matrix = distances_matrix
+
+    def solve(self):
         """
         Solve travelling salesman problem solver problem given distances grid.
         Returns an array of cities indices defining optimal trip.

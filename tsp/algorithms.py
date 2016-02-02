@@ -67,3 +67,47 @@ class BruteForceTSPSolver:
                 best_path_distance = path_distance
 
         return best_path
+
+
+class BoltzmannMachineTSPSolver:
+    """
+    Travelling salesman problem solver that uses Boltzmann machine to compute a solution
+    """
+
+    def __init__(self, distances_matrix):
+
+        self.distances_matrix = distances_matrix
+
+        nodes_number = distances_matrix.shape[0]
+
+        # Grid of nodes represents possible path combinations.
+        # Each row represents a city and each column a position in the tour.
+        # So node(1, 2) represents city no 3 visited at step no 4
+        self.nodes = np.zeros([nodes_number, nodes_number])
+
+        max_distance = np.max(self.distances_matrix)
+
+        # Compute bias and penalty according to inequalities penalty > bias > 2 * max_distance
+        bias = 2.5 * max_distance
+        penalty = 3 * max_distance
+
+        # Each node from the 2D grid is connected to all other nodes (including itself), hence
+        # weights matrix is 4D.
+        # For each node at grid position (i, j):
+        # Node (i, j) has a self-connection of weight b representing desirability of visiting city i at stage j
+        # Node (i, j) is connected to all other units in row i with a penalty weight -p.
+        # This represents the constraints that the same city is not visited more than once.
+        # Node (i, j) is connected to all other units in the column j with a penalty weight -p.
+        # This represents the constrained that only one city can be visited at a single trip stage
+        # Node (i, j) is connected to nodes(k, j+1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
+        # where d is a matrix of distance.
+        # This represents cost of transitioning from city i at stage j to city k at stage j+1
+        # Node (i, j) is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
+        # where d is a matrix of distance.
+        # This represents cost of transitioning from city k at stage j - 1to city i at stage j
+        self.weights = self.get_initialized_weights_matrix(nodes_number, bias, penalty)
+
+    def get_initialized_weights_matrix(self, nodes_number, bias, penalty):
+
+        weights = np.zeros([nodes_number, nodes_number, nodes_number, nodes_number])
+        return weights

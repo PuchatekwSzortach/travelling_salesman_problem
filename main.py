@@ -7,8 +7,10 @@ if __name__ == "__main__":
 
     distances_matrix = tsp.algorithms.get_random_distances_matrix(cities_number, max_distance)
 
-    path = tsp.algorithms.BruteForceTSPSolver(distances_matrix).solve()
+    # path = tsp.algorithms.BruteForceTSPSolver(distances_matrix).solve()
+    #
+    # print("Path is " + str(path))
+    # print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, path)))
 
-    print("Path is " + str(path))
-    print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, path)))
+    tsp.algorithms.BoltzmannMachineTSPSolver(distances_matrix)
 

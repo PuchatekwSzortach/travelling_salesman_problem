@@ -1,4 +1,6 @@
+import pprint
 import tsp.algorithms
+
 
 if __name__ == "__main__":
 
@@ -6,6 +8,9 @@ if __name__ == "__main__":
     max_distance = 100
 
     distances_matrix = tsp.algorithms.get_random_distances_matrix(cities_number, max_distance)
+
+    print("Distances matrix")
+    pprint.pprint(distances_matrix)
 
     # path = tsp.algorithms.BruteForceTSPSolver(distances_matrix).solve()
     #

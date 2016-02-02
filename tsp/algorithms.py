@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import pprint
 
 def get_random_distances_matrix(cities_number, max_distance):
     """
@@ -107,7 +108,55 @@ class BoltzmannMachineTSPSolver:
         # This represents cost of transitioning from city k at stage j - 1to city i at stage j
         self.weights = self.get_initialized_weights_matrix(nodes_number, bias, penalty)
 
+        print("Weights")
+        for city_index in range(nodes_number):
+            for tour_step_index in range(nodes_number):
+                print("City index {}".format(city_index))
+                print("Tour step index {}".format(tour_step_index))
+                pprint.pprint(self.weights[city_index, tour_step_index])
+
     def get_initialized_weights_matrix(self, nodes_number, bias, penalty):
 
         weights = np.zeros([nodes_number, nodes_number, nodes_number, nodes_number])
+
+        for city_index in range(nodes_number):
+
+            for tour_step_index in range(nodes_number):
+
+                # Select a 2D matrix of weights for this node
+                node_weights = weights[city_index, tour_step_index]
+
+                # distances = self.distances_matrix[city_index, :]
+                # # Set distances to other cities on adjacent trips
+                #
+                # # For trip at previous stage. For first step wire it back to last step, so that starting position
+                # # doesn't matter
+                # previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else nodes_number - 1
+                # node_weights[previous_tour_step_index, :] = -distances
+                #
+                # # For trip at next stage. For last step wire it back to first step, so that starting position
+                # # doesn't matter
+                # next_tour_step_index = tour_step_index + 1 if tour_step_index < nodes_number - 1 else 0
+                # node_weights[next_tour_step_index, :] = -distances
+
+                # Penalty for visiting other cities at that tour step
+                node_weights[:, tour_step_index] = -penalty
+
+                # Penalty for visiting same city at other tour steps
+                node_weights[city_index, :] = -penalty
+
+                node_weights[city_index, tour_step_index] = bias
+
         return weights
+
+    def get_weights_to_cities_at_previous_tour_step(self, city_index, tour_step, nodes_number):
+
+        previous_city_index = city_index - 1
+
+        # Wrap around if to last city in the matrix if needed
+        if previous_city_index == -1:
+            previous_city_index = nodes_number - 1
+
+        weights = self.distances_matrix[city_index, :]
+
+

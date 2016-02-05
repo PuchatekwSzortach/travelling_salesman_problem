@@ -103,3 +103,31 @@ def test_brute_force_solution_four_cities(four_cities_grid):
     optimal_trip = tsp.algorithms.BruteForceTSPSolver(four_cities_grid).solve()
     assert 120 == tsp.algorithms.get_trip_distance(four_cities_grid, optimal_trip)
 
+
+def test_get_trip_distance_eye_matrix():
+
+    assert tsp.algorithms.is_nodes_configuration_legal(np.eye(5)) is True
+
+
+def test_get_trip_distance_matrix_with_double_row_entries():
+
+    matrix = np.eye(5)
+    matrix[0, 1] = 1
+
+    assert tsp.algorithms.is_nodes_configuration_legal(matrix) is False
+
+
+def test_get_trip_distance_matrix_with_double_column_entries():
+
+    matrix = np.eye(5)
+    matrix[3, 0] = 1
+
+    assert tsp.algorithms.is_nodes_configuration_legal(matrix) is False
+
+
+def test_get_trip_distance_matrix_with_missing_entries():
+
+    matrix = np.eye(5)
+    matrix[0, 0] = 0
+
+    assert tsp.algorithms.is_nodes_configuration_legal(matrix) is False

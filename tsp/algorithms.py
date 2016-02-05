@@ -34,6 +34,25 @@ def get_trip_distance(distances_matrix, path):
     return distance
 
 
+# Given a square matrix of binary values, check if it represents a legal configuration for a
+# travelling salesman problem. Configuration is deemed to be legal if in each row and each column exactly
+# one node is set
+def is_nodes_configuration_legal(nodes):
+
+    for row_index in range(nodes.shape[0]):
+
+        if np.sum(nodes[row_index, :]) != 1:
+            return False
+
+    for column_index in range(nodes.shape[1]):
+
+        if np.sum(nodes[:, column_index]) != 1:
+            return False
+
+    # Seems we passed all the checks, so configuration is legal
+    return True
+
+
 class BruteForceTSPSolver:
     """
     Travelling salesman problem solver that uses brute force to compute optimal solution.
@@ -78,14 +97,13 @@ class BoltzmannMachineTSPSolver:
     def __init__(self, distances_matrix):
 
         self.distances_matrix = distances_matrix
-
-        nodes_number = distances_matrix.shape[0]
+        self.nodes_number = distances_matrix.shape[0]
 
         # Grid of nodes represents possible path combinations.
         # Each row represents a city and each column a position in the tour.
         # So node(1, 2) represents city no 3 visited at step no 4.
         # And since we need to have an initial legal path, make it a diagonal matrix
-        self.nodes = np.eye(nodes_number)
+        self.nodes = np.eye(self.nodes_number)
 
         max_distance = np.max(self.distances_matrix)
 
@@ -107,24 +125,17 @@ class BoltzmannMachineTSPSolver:
         # Node (i, j) is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
         # where d is a distance matrix.
         # This represents cost of transitioning from city k at stage j - 1 to city i at stage j
-        self.weights = self.get_initialized_weights_matrix(nodes_number, bias, penalty)
+        self.weights = self._get_initialized_weights_matrix(bias, penalty)
 
-        print("Weights")
-        for city_index in range(nodes_number):
-            for tour_step_index in range(nodes_number):
-                print("City index {}".format(city_index))
-                print("Tour step index {}".format(tour_step_index))
-                pprint.pprint(self.weights[city_index, tour_step_index])
+        self.temperature = self._get_initial_temperature(bias, penalty)
 
-        self.temperature = self.get_initial_temperature(nodes_number, bias, penalty)
+    def _get_initialized_weights_matrix(self, bias, penalty):
 
-    def get_initialized_weights_matrix(self, nodes_number, bias, penalty):
+        weights = np.zeros([self.nodes_number, self.nodes_number, self.nodes_number, self.nodes_number])
 
-        weights = np.zeros([nodes_number, nodes_number, nodes_number, nodes_number])
+        for city_index in range(self.nodes_number):
 
-        for city_index in range(nodes_number):
-
-            for tour_step_index in range(nodes_number):
+            for tour_step_index in range(self.nodes_number):
 
                 # Select a 2D matrix of weights for this node
                 node_weights = weights[city_index, tour_step_index]
@@ -134,12 +145,12 @@ class BoltzmannMachineTSPSolver:
 
                 # For trip at previous stage. For first step wire it back to last step, so that starting position
                 # doesn't matter
-                previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else nodes_number - 1
+                previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else self.nodes_number - 1
                 node_weights[:, previous_tour_step_index] = -distances
 
                 # For trip at next stage. For last step wire it back to first step, so that starting position
                 # doesn't matter
-                next_tour_step_index = tour_step_index + 1 if tour_step_index < nodes_number - 1 else 0
+                next_tour_step_index = tour_step_index + 1 if tour_step_index < self.nodes_number - 1 else 0
                 node_weights[:, next_tour_step_index] = -distances
 
                 # Penalty for visiting other cities at that tour step
@@ -152,11 +163,51 @@ class BoltzmannMachineTSPSolver:
 
         return weights
 
-    def get_initial_temperature(self, nodes_number, bias, penalty):
+    def _get_initial_temperature(self, bias, penalty):
 
         # We want initial temperature to be so high that any change in consensus, both positive and negative,
         # will be equally likely to be accepted. This effectively means temperature should be significantly higher
         # than highest change in consensus that can occur - say 100 times higher. And highest possible change in
         # consensus is when all nodes in same column and row as examined node are on - meaning incurring maximum penalty
-        total_penalty = penalty * (nodes_number - 1) * (nodes_number - 1)
+        total_penalty = penalty * (self.nodes_number - 1) * (self.nodes_number - 1)
         return 100 * (total_penalty - bias)
+
+    def solve(self):
+
+        last_legal_configuration = self.nodes.copy()
+
+        while self.temperature > 1:
+
+            for _ in range(self.nodes_number**2):
+
+                # Get random coordinates for a node
+                i, j = np.random.random_integers(0, self.nodes_number - 1, 2)
+
+                consensus_change = self._get_consensus_change(i, j)
+                change_probability = self._get_activation_change_probability(consensus_change, self.temperature)
+
+                # Change node value with change_probability
+                if np.random.binomial(1, change_probability) == 1:
+
+                    self.nodes[i, j] = 1 - self.nodes[i, j]
+
+            self.temperature *= 0.98
+
+        return last_legal_configuration
+
+    def _get_consensus_change(self, i, j):
+
+        node_value = self.nodes[i, j]
+        sign = 1 - node_value
+
+        node_weights = self.weights[i, j]
+        weights_effect = node_weights * node_value
+
+        return sign * weights_effect
+
+    def _get_activation_change_probability(self, consensus_change, temperature):
+
+        exponential = np.exp(-1 * consensus_change / temperature)
+        return 1 / (1 + exponential)
+
+

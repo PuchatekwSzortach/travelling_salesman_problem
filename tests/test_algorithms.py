@@ -131,3 +131,17 @@ def test_get_trip_distance_matrix_with_missing_entries():
     matrix[0, 0] = 0
 
     assert tsp.algorithms.is_nodes_configuration_legal(matrix) is False
+
+
+def test_get_path_from_nodes_configuration_eye_matrix():
+
+    assert [0, 1, 2, 3, 4] == tsp.algorithms.get_path_from_nodes_configuration(np.eye(5))
+
+
+def test_get_path_from_nodes_configuration_four_cities():
+
+    matrix = np.zeros([4, 4])
+
+    matrix[0, 2] = matrix[1, 0] = matrix[2, 3] = matrix[3, 1] = 1
+
+    assert [2, 0, 3, 1] == tsp.algorithms.get_path_from_nodes_configuration(matrix)

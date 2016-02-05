@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 import pprint
 
+
 def get_random_distances_matrix(cities_number, max_distance):
     """
     :param cities_number:
@@ -51,6 +52,19 @@ def is_nodes_configuration_legal(nodes):
 
     # Seems we passed all the checks, so configuration is legal
     return True
+
+
+# Given a square matrix of binary values representing a legal tsp path, return the path as a list of city indices
+# visited at each path stage.
+def get_path_from_nodes_configuration(nodes):
+
+    path = []
+
+    for row_index in range(nodes.shape[0]):
+
+        path.append(np.argmax(nodes[row_index, :]))
+
+    return path
 
 
 class BruteForceTSPSolver:

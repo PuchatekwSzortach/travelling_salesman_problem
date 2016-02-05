@@ -101,11 +101,11 @@ class BoltzmannMachineTSPSolver:
         # Node (i, j) is connected to all other units in the column j with a penalty weight -p.
         # This represents the constrained that only one city can be visited at a single trip stage
         # Node (i, j) is connected to nodes(k, j+1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
-        # where d is a matrix of distance.
+        # where d is a distance matrix.
         # This represents cost of transitioning from city i at stage j to city k at stage j+1
         # Node (i, j) is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
-        # where d is a matrix of distance.
-        # This represents cost of transitioning from city k at stage j - 1to city i at stage j
+        # where d is a distance matrix.
+        # This represents cost of transitioning from city k at stage j - 1 to city i at stage j
         self.weights = self.get_initialized_weights_matrix(nodes_number, bias, penalty)
 
         print("Weights")
@@ -126,18 +126,18 @@ class BoltzmannMachineTSPSolver:
                 # Select a 2D matrix of weights for this node
                 node_weights = weights[city_index, tour_step_index]
 
-                # distances = self.distances_matrix[city_index, :]
-                # # Set distances to other cities on adjacent trips
-                #
-                # # For trip at previous stage. For first step wire it back to last step, so that starting position
-                # # doesn't matter
-                # previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else nodes_number - 1
-                # node_weights[previous_tour_step_index, :] = -distances
-                #
-                # # For trip at next stage. For last step wire it back to first step, so that starting position
-                # # doesn't matter
-                # next_tour_step_index = tour_step_index + 1 if tour_step_index < nodes_number - 1 else 0
-                # node_weights[next_tour_step_index, :] = -distances
+                distances = self.distances_matrix[city_index, :]
+                # Set distances to other cities on adjacent trips
+
+                # For trip at previous stage. For first step wire it back to last step, so that starting position
+                # doesn't matter
+                previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else nodes_number - 1
+                node_weights[:, previous_tour_step_index] = -distances
+
+                # For trip at next stage. For last step wire it back to first step, so that starting position
+                # doesn't matter
+                next_tour_step_index = tour_step_index + 1 if tour_step_index < nodes_number - 1 else 0
+                node_weights[:, next_tour_step_index] = -distances
 
                 # Penalty for visiting other cities at that tour step
                 node_weights[:, tour_step_index] = -penalty

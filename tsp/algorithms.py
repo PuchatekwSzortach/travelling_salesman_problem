@@ -83,8 +83,9 @@ class BoltzmannMachineTSPSolver:
 
         # Grid of nodes represents possible path combinations.
         # Each row represents a city and each column a position in the tour.
-        # So node(1, 2) represents city no 3 visited at step no 4
-        self.nodes = np.zeros([nodes_number, nodes_number])
+        # So node(1, 2) represents city no 3 visited at step no 4.
+        # And since we need to have an initial legal path, make it a diagonal matrix
+        self.nodes = np.eye(nodes_number)
 
         max_distance = np.max(self.distances_matrix)
 
@@ -114,6 +115,8 @@ class BoltzmannMachineTSPSolver:
                 print("City index {}".format(city_index))
                 print("Tour step index {}".format(tour_step_index))
                 pprint.pprint(self.weights[city_index, tour_step_index])
+
+        self.temperature = self.get_initial_temperature(nodes_number, bias, penalty)
 
     def get_initialized_weights_matrix(self, nodes_number, bias, penalty):
 
@@ -149,14 +152,11 @@ class BoltzmannMachineTSPSolver:
 
         return weights
 
-    def get_weights_to_cities_at_previous_tour_step(self, city_index, tour_step, nodes_number):
+    def get_initial_temperature(self, nodes_number, bias, penalty):
 
-        previous_city_index = city_index - 1
-
-        # Wrap around if to last city in the matrix if needed
-        if previous_city_index == -1:
-            previous_city_index = nodes_number - 1
-
-        weights = self.distances_matrix[city_index, :]
-
-
+        # We want initial temperature to be so high that any change in consensus, both positive and negative,
+        # will be equally likely to be accepted. This effectively means temperature should be significantly higher
+        # than highest change in consensus that can occur - say 100 times higher. And highest possible change in
+        # consensus is when all nodes in same column and row as examined node are on - meaning incurring maximum penalty
+        total_penalty = penalty * (nodes_number - 1) * (nodes_number - 1)
+        return 100 * (total_penalty - bias)

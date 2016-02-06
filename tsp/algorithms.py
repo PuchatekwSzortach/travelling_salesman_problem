@@ -1,6 +1,5 @@
 import numpy as np
 import itertools
-import pprint
 
 
 def get_random_distances_matrix(cities_number, max_distance):
@@ -156,7 +155,7 @@ class BoltzmannMachineTSPSolver:
 
         # Compute bias and penalty according to inequalities penalty > bias > 2 * max_distance
         bias = 2.5 * max_distance
-        penalty = 3 * max_distance
+        penalty = 2 * bias
 
         # Each node from the 2D grid is connected to all other nodes (including itself), hence
         # weights matrix is 4D.
@@ -255,11 +254,8 @@ class BoltzmannMachineTSPSolver:
 
         weights_effect = np.sum(node_weights * self.nodes)
 
-        # We now need to remove effect of node of interest
-        weights_effect -= node_weights[i, j] * node_value
-
-        # And finally add bias to result
-        weights_effect += node_weights[i, j]
+        # We now need to remove effect of node of interest and add its bias
+        weights_effect += (1 - node_value) * node_weights[i, j]
 
         return sign * weights_effect
 

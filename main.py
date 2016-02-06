@@ -23,7 +23,6 @@ if __name__ == "__main__":
 
     start = time.time()
     boltzmann_path = tsp.algorithms.BoltzmannMachineTSPSolver(distances_matrix).solve()
-    print("\nBoltzmann_path is " + str(boltzmann_path))
+    print("\nBoltzmann path is " + str(boltzmann_path))
     print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, boltzmann_path)))
     print("Computational time is: {0:.2f} seconds".format(time.time() - start))
-

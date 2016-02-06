@@ -6,7 +6,7 @@ def get_random_distances_matrix(cities_number, max_distance):
     """
     :param cities_number:
     :param max_distance:
-    :return: matrix of distances from. E.g. element (i,j) defines distance from city i to city j
+    :return: matrix of distances between cities. E.g. element (i,j) defines distance from city i to city j
     """
 
     asymmetric_distances_matrix = np.random.random_integers(1, max_distance, size=(cities_number, cities_number))
@@ -35,8 +35,8 @@ def get_trip_distance(distances_matrix, path):
 
 
 # Given a square matrix of binary values, check if it represents a legal configuration for a
-# travelling salesman problem. Configuration is deemed to be legal if in each row and each column exactly
-# one node is set
+# travelling salesman problem. Configuration is deemed to be legal if
+# in each row and each column exactly one node is set
 def is_nodes_configuration_legal(nodes):
 
     for row_index in range(nodes.shape[0]):
@@ -77,8 +77,8 @@ class BruteForceTSPSolver:
 
     def solve(self):
         """
-        Solve travelling salesman problem solver problem given distances grid.
-        Returns an array of cities indices defining optimal trip.
+        Solve travelling salesman.
+        Returns a list of cities indices defining optimal trip.
         """
 
         # Generate all possible paths
@@ -111,8 +111,8 @@ class BruteForceTSPWorstPathSolver:
 
     def solve(self):
         """
-        Solve travelling salesman problem solver problem given distances grid.
-        Returns an array of cities indices defining worst possible trip.
+        Solve travelling salesman problem.
+        Returns a list of cities indices defining worst possible trip.
         """
 
         # Generate all possible paths
@@ -147,8 +147,9 @@ class BoltzmannMachineTSPSolver:
 
         # Grid of nodes represents possible path combinations.
         # Each row represents a city and each column a position in the tour.
-        # So node(1, 2) represents city no 3 visited at step no 4.
-        # And since we need to have an initial legal path, make it a diagonal matrix
+        # So node(1, 2) represents city no 2 visited at step no 3.
+        # And since we need to have an initial legal path, set initial nodes
+        # configuration to an eye matrix
         self.nodes = np.eye(self.cities_number)
 
         max_distance = np.max(self.distances_matrix)
@@ -157,25 +158,37 @@ class BoltzmannMachineTSPSolver:
         bias = 2.5 * max_distance
         penalty = 2 * bias
 
-        # Each node from the 2D grid is connected to all other nodes (including itself), hence
-        # weights matrix is 4D.
-        # For each node at grid position (i, j):
-        # Node (i, j) has a self-connection of weight b representing desirability of visiting city i at stage j
-        # Node (i, j) is connected to all other units in row i with a penalty weight -p.
-        # This represents the constraints that the same city is not visited more than once.
-        # Node (i, j) is connected to all other units in the column j with a penalty weight -p.
-        # This represents the constrained that only one city can be visited at a single trip stage
-        # Node (i, j) is connected to nodes(k, j+1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
-        # where d is a distance matrix.
-        # This represents cost of transitioning from city i at stage j to city k at stage j+1
-        # Node (i, j) is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
-        # where d is a distance matrix.
-        # This represents cost of transitioning from city k at stage j - 1 to city i at stage j
         self.weights = self._get_weights_matrix(bias, penalty)
-
         self.temperature = self._get_initial_temperature(bias, penalty)
 
     def _get_weights_matrix(self, bias, penalty):
+        """
+        Computes weights matrix.
+        Each node from the 2D grid is connected to all other nodes (including itself), hence
+        weights matrix is 4D.
+
+        For each node at grid position (i, j):
+
+            Node has a self-connection of weight b representing desirability of visiting city i at stage j
+
+            Node is connected to all other units in row i with a penalty weight -p.
+            This represents the constraint that the same city is not visited more than once.
+
+            Node is connected to all other units in the column j with a penalty weight -p.
+            This represents the constraint that only one city can be visited at a single trip stage
+
+            Node is connected to nodes(k, j+1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
+            where d is a distance matrix.
+            This represents cost of transitioning from city i at stage j to city k at stage j+1
+
+            Node is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
+            where d is a distance matrix.
+            This represents cost of transitioning from city k at stage j - 1 to city i at stage j
+
+        :param bias:
+        :param penalty:
+        :return: 4D weights matrix representing connections from each node to all network nodes
+        """
 
         weights = np.zeros([self.cities_number, self.cities_number, self.cities_number, self.cities_number])
 
@@ -186,15 +199,17 @@ class BoltzmannMachineTSPSolver:
                 # Select a 2D matrix of weights for this node
                 node_weights = weights[city_index, tour_step_index]
 
+                # Distances between current city and other cities
                 distances = self.distances_matrix[city_index, :]
-                # Set distances to other cities on adjacent trips
 
-                # For trip at previous stage. For first step wire it back to last step, so that starting position
+                # Set costs for going from city at previous trip step to current city.
+                # If this is the first trip step, use last step column, so that starting position
                 # doesn't matter
                 previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else self.cities_number - 1
                 node_weights[:, previous_tour_step_index] = -distances
 
-                # For trip at next stage. For last step wire it back to first step, so that starting position
+                # Set costs for going from city at current trip step to city in next trip step.
+                # If this is the last trip step, use first step column, so that finish position
                 # doesn't matter
                 next_tour_step_index = tour_step_index + 1 if tour_step_index < self.cities_number - 1 else 0
                 node_weights[:, next_tour_step_index] = -distances
@@ -205,17 +220,25 @@ class BoltzmannMachineTSPSolver:
                 # Penalty for visiting same city at other tour steps
                 node_weights[city_index, :] = -penalty
 
+                # Benefit gained from visiting the city
                 node_weights[city_index, tour_step_index] = bias
 
         return weights
 
     def _get_initial_temperature(self, bias, penalty):
+        """
+        Compute initial temperature.
+        We want initial temperature to be so high that any change in consensus, both positive and negative,
+        will be equally likely to be accepted. This effectively means temperature should be significantly higher
+        than highest change in consensus that can occur - say 100 times higher (at which point probability
+        of accepting the change will be roughly within 1% from fifty-fifty for even highest consensus change).
+        A high consensus change would result from moving into a highly illegal configuration, say
+        revisiting the same city cities_number times and being in all cities at the same time.
+        :param bias:
+        :param penalty:
+        :return: initial temperature
+        """
 
-        # We want initial temperature to be so high that any change in consensus, both positive and negative,
-        # will be equally likely to be accepted. This effectively means temperature should be significantly higher
-        # than highest change in consensus that can occur - say 100 times higher.
-        # A high consensus change would result from moving into a highly illegal configuration, say
-        # revisiting the same city cities_number times and being in all cities at the same time.
         total_penalty = penalty * (self.cities_number - 1) * (self.cities_number - 1)
         return 100 * (total_penalty - bias)
 
@@ -223,7 +246,8 @@ class BoltzmannMachineTSPSolver:
 
         last_legal_configuration = self.nodes.copy()
 
-        while self.temperature > 0.01:
+        # At temperature 0.1 probability of configuration change is virtually 0
+        while self.temperature > 0.1:
 
             for _ in range(self.nodes_number**2):
 
@@ -233,14 +257,16 @@ class BoltzmannMachineTSPSolver:
                 consensus_change = self._get_consensus_change(i, j)
                 change_probability = self._get_activation_change_probability(consensus_change, self.temperature)
 
-                # Change node value with change_probability
+                # Change node activation with change_probability
                 if np.random.binomial(1, change_probability) == 1:
 
+                    # Change node activation
                     self.nodes[i, j] = 1 - self.nodes[i, j]
 
                     if is_nodes_configuration_legal(self.nodes):
                         last_legal_configuration = self.nodes.copy()
 
+            # Decrease temperature
             self.temperature *= 0.98
 
         return get_path_from_nodes_configuration(last_legal_configuration)
@@ -254,7 +280,10 @@ class BoltzmannMachineTSPSolver:
 
         weights_effect = np.sum(node_weights * self.nodes)
 
-        # We now need to remove effect of node of interest and add its bias
+        # To compute weights effect of other nodes in a single step, we used an element-wise matrix
+        # multiplication that. That included in weights effect of the node we consider and we will have
+        # to remove that effect now. We also need to include benefit from visiting the node,
+        # so do both operations in a single step.
         weights_effect += (1 - node_value) * node_weights[i, j]
 
         return sign * weights_effect
@@ -264,9 +293,8 @@ class BoltzmannMachineTSPSolver:
         exponential_argument = -1 * consensus_change / temperature
 
         # To avoid overflow problems for values that would lead to a huge exponent just use a large value
+        # that approximates correct result well enough.
         # Once exponent get high enough it doesn't really matter if we get 0.0001% or 0.00001% probability anyway
         exponential = np.exp(exponential_argument) if exponential_argument < 100 else 1e40
 
         return 1 / (1 + exponential)
-
-

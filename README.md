@@ -2,7 +2,7 @@
 
 This repository contains three different travelling salesman problem solvers.
 First two, `BruteForceTSPSolver` and `BruteForceTSPWorstPathSolver` simply perform a brute force search to find best and worst possible paths.
-Third solver, `BoltzmannMachineTSPSolver`, uses a Boltzmann machine to find a solution. Note Boltzmann machine doesn't guarantee it will find optimal solution. It is however faster than a brute force search for trips containing more than ~11 cities.
+Third solver, `BoltzmannMachineTSPSolver`, uses a Boltzmann machine to find a solution. Please note that Boltzmann machine doesn't guarantee it will find an optimal solution. It is however faster than a brute force search for trips containing more than ~11 cities.
 
 Utilities to create random distances matrix and compute paths lengths are also provided.
 

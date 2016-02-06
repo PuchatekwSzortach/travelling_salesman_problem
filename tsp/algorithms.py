@@ -80,8 +80,6 @@ class BruteForceTSPSolver:
         """
         Solve travelling salesman problem solver problem given distances grid.
         Returns an array of cities indices defining optimal trip.
-        :param distances_matrix:
-        :return:
         """
 
         # Generate all possible paths
@@ -101,6 +99,40 @@ class BruteForceTSPSolver:
                 best_path_distance = path_distance
 
         return best_path
+
+
+class BruteForceTSPWorstPathSolver:
+    """
+    Travelling salesman problem solver that uses brute force to compute worst possible solution.
+    """
+
+    def __init__(self, distances_matrix):
+
+        self.distances_matrix = distances_matrix
+
+    def solve(self):
+        """
+        Solve travelling salesman problem solver problem given distances grid.
+        Returns an array of cities indices defining worst possible trip.
+        """
+
+        # Generate all possible paths
+        cities_number = self.distances_matrix.shape[0]
+        paths = itertools.permutations(range(cities_number))
+
+        worst_path = next(paths)
+        worst_path_distance = get_trip_distance(self.distances_matrix, worst_path)
+
+        for path in paths:
+
+            path_distance = get_trip_distance(self.distances_matrix, path)
+
+            if path_distance > worst_path_distance:
+
+                worst_path = path
+                worst_path_distance = path_distance
+
+        return worst_path
 
 
 class BoltzmannMachineTSPSolver:
@@ -226,7 +258,7 @@ class BoltzmannMachineTSPSolver:
         # We now need to remove effect of node of interest
         weights_effect -= node_weights[i, j] * node_value
 
-        # And finally add biasy to result
+        # And finally add bias to result
         weights_effect += node_weights[i, j]
 
         return sign * weights_effect

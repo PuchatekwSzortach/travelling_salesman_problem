@@ -9,11 +9,12 @@ if __name__ == "__main__":
 
     distances_matrix = tsp.algorithms.get_random_distances_matrix(cities_number, max_distance)
 
-    # path = tsp.algorithms.BruteForceTSPSolver(distances_matrix).solve()
-    #
-    # print("Path is " + str(path))
-    # print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, path)))
+    optimal_path = tsp.algorithms.BruteForceTSPSolver(distances_matrix).solve()
 
-    configuration = tsp.algorithms.BoltzmannMachineTSPSolver(distances_matrix).solve()
-    print(configuration)
+    print("Optimal path is " + str(optimal_path))
+    print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, optimal_path)))
+
+    boltzmann_path = tsp.algorithms.BoltzmannMachineTSPSolver(distances_matrix).solve()
+    print("Boltzmann_path is " + str(boltzmann_path))
+    print("Distance is " + str(tsp.algorithms.get_trip_distance(distances_matrix, boltzmann_path)))
 

@@ -111,13 +111,14 @@ class BoltzmannMachineTSPSolver:
     def __init__(self, distances_matrix):
 
         self.distances_matrix = distances_matrix
-        self.nodes_number = distances_matrix.shape[0]
+        self.cities_number = distances_matrix.shape[0]
+        self.nodes_number = self.cities_number * self.cities_number
 
         # Grid of nodes represents possible path combinations.
         # Each row represents a city and each column a position in the tour.
         # So node(1, 2) represents city no 3 visited at step no 4.
         # And since we need to have an initial legal path, make it a diagonal matrix
-        self.nodes = np.eye(self.nodes_number)
+        self.nodes = np.eye(self.cities_number)
 
         max_distance = np.max(self.distances_matrix)
 
@@ -139,17 +140,17 @@ class BoltzmannMachineTSPSolver:
         # Node (i, j) is connected to nodes(k, j-1) for 0 <= k < nodes_number, k != i with weight -d(i,k)
         # where d is a distance matrix.
         # This represents cost of transitioning from city k at stage j - 1 to city i at stage j
-        self.weights = self._get_initialized_weights_matrix(bias, penalty)
+        self.weights = self._get_weights_matrix(bias, penalty)
 
         self.temperature = self._get_initial_temperature(bias, penalty)
 
-    def _get_initialized_weights_matrix(self, bias, penalty):
+    def _get_weights_matrix(self, bias, penalty):
 
-        weights = np.zeros([self.nodes_number, self.nodes_number, self.nodes_number, self.nodes_number])
+        weights = np.zeros([self.cities_number, self.cities_number, self.cities_number, self.cities_number])
 
-        for city_index in range(self.nodes_number):
+        for city_index in range(self.cities_number):
 
-            for tour_step_index in range(self.nodes_number):
+            for tour_step_index in range(self.cities_number):
 
                 # Select a 2D matrix of weights for this node
                 node_weights = weights[city_index, tour_step_index]
@@ -159,12 +160,12 @@ class BoltzmannMachineTSPSolver:
 
                 # For trip at previous stage. For first step wire it back to last step, so that starting position
                 # doesn't matter
-                previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else self.nodes_number - 1
+                previous_tour_step_index = tour_step_index - 1 if tour_step_index > 0 else self.cities_number - 1
                 node_weights[:, previous_tour_step_index] = -distances
 
                 # For trip at next stage. For last step wire it back to first step, so that starting position
                 # doesn't matter
-                next_tour_step_index = tour_step_index + 1 if tour_step_index < self.nodes_number - 1 else 0
+                next_tour_step_index = tour_step_index + 1 if tour_step_index < self.cities_number - 1 else 0
                 node_weights[:, next_tour_step_index] = -distances
 
                 # Penalty for visiting other cities at that tour step
@@ -181,21 +182,22 @@ class BoltzmannMachineTSPSolver:
 
         # We want initial temperature to be so high that any change in consensus, both positive and negative,
         # will be equally likely to be accepted. This effectively means temperature should be significantly higher
-        # than highest change in consensus that can occur - say 100 times higher. And highest possible change in
-        # consensus is when all nodes in same column and row as examined node are on - meaning incurring maximum penalty
-        total_penalty = penalty * (self.nodes_number - 1) * (self.nodes_number - 1)
+        # than highest change in consensus that can occur - say 100 times higher.
+        # A high consensus change would result from moving into a highly illegal configuration, say
+        # revisiting the same city cities_number times and being in all cities at the same time.
+        total_penalty = penalty * (self.cities_number - 1) * (self.cities_number - 1)
         return 100 * (total_penalty - bias)
 
     def solve(self):
 
         last_legal_configuration = self.nodes.copy()
 
-        while self.temperature > 1:
+        while self.temperature > 0.01:
 
             for _ in range(self.nodes_number**2):
 
                 # Get random coordinates for a node
-                i, j = np.random.random_integers(0, self.nodes_number - 1, 2)
+                i, j = np.random.random_integers(0, self.cities_number - 1, 2)
 
                 consensus_change = self._get_consensus_change(i, j)
                 change_probability = self._get_activation_change_probability(consensus_change, self.temperature)
@@ -205,9 +207,12 @@ class BoltzmannMachineTSPSolver:
 
                     self.nodes[i, j] = 1 - self.nodes[i, j]
 
+                    if is_nodes_configuration_legal(self.nodes):
+                        last_legal_configuration = self.nodes.copy()
+
             self.temperature *= 0.98
 
-        return last_legal_configuration
+        return get_path_from_nodes_configuration(last_legal_configuration)
 
     def _get_consensus_change(self, i, j):
 
@@ -215,13 +220,25 @@ class BoltzmannMachineTSPSolver:
         sign = 1 - node_value
 
         node_weights = self.weights[i, j]
-        weights_effect = node_weights * node_value
+
+        weights_effect = np.sum(node_weights * self.nodes)
+
+        # We now need to remove effect of node of interest
+        weights_effect -= node_weights[i, j] * node_value
+
+        # And finally add biasy to result
+        weights_effect += node_weights[i, j]
 
         return sign * weights_effect
 
     def _get_activation_change_probability(self, consensus_change, temperature):
 
-        exponential = np.exp(-1 * consensus_change / temperature)
+        exponential_argument = -1 * consensus_change / temperature
+
+        # To avoid overflow problems for values that would lead to a huge exponent just use a large value
+        # Once exponent get high enough it doesn't really matter if we get 0.0001% or 0.00001% probability anyway
+        exponential = np.exp(exponential_argument) if exponential_argument < 100 else 1e40
+
         return 1 / (1 + exponential)
 
 
